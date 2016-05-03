@@ -40,10 +40,11 @@ public class WeaverTests
     [TestCase("ConstructorWithSingleArgument")]
     [TestCase("MultipleConstructors")]
     [TestCase("NoMatchingProperty")]
+    [TestCase("NoWithStub")]
     public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
-        Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With")));
+        Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType != typeof(object)));
     }
 
     [Test]
@@ -88,6 +89,31 @@ public class WeaverTests
         Assert.AreEqual(instance.Value1, result3.Value1);
         Assert.AreEqual(instance.Value2, result3.Value2);
         Assert.AreEqual(333, result3.Value3);
+    }
+
+    [Test]
+    public void UnusualPropertyCasing_WithIsInjectedAnyway()
+    {
+        var type = assembly.GetType("AssemblyToProcess.PropertyCasing");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.VALUE1);
+        Assert.AreEqual(instance.vaLue2, result1.vaLue2);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.VALUE1, result2.VALUE1);
+        Assert.AreEqual("World", result2.vaLue2);
+    }
+
+    [Test]
+    public void OriginalWithMethodIsRemoved()
+    {
+        var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        Assert.False(type1.GetMethods().Any(m => m.Name == "With" && m.GetParameters()[0].ParameterType == typeof(object)));
+
+        var type2 = assembly.GetType("AssemblyToProcess.PropertiesOfSameType");
+        Assert.False(type2.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType == typeof(object)));
     }
 
 #if(DEBUG)

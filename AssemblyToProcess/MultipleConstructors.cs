@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace AssemblyToProcess
+﻿namespace AssemblyToProcess
 {
     public class MultipleConstructors
     {
@@ -21,5 +16,7 @@ namespace AssemblyToProcess
         public int Value1 { get; set; }
 
         public string Value2 { get; set; }
+
+        public MultipleConstructors With(object value) => this;
     }
 }

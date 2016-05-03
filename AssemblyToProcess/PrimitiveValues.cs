@@ -15,5 +15,7 @@ namespace AssemblyToProcess
         public string Value2 { get; }
 
         public long Value3 { get; }
+
+        public PrimitiveValues With(object value) => this;
     }
 }

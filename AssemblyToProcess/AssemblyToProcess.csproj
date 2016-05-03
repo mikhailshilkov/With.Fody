@@ -39,10 +39,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NoWithStub.cs" />
     <Compile Include="NoMatchingProperty.cs" />
     <Compile Include="MultipleConstructors.cs" />
     <Compile Include="ConstructorWithSingleArgument.cs" />
     <Compile Include="NoConstructor.cs" />
+    <Compile Include="PropertyCasing.cs" />
     <Compile Include="PropertiesOfSameType.cs" />
     <Compile Include="PrimitiveValues.cs" />
   </ItemGroup>

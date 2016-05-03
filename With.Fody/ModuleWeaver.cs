@@ -12,8 +12,6 @@ public class ModuleWeaver
     // An instance of Mono.Cecil.ModuleDefinition for processing
     public ModuleDefinition ModuleDefinition { get; set; }
 
-    TypeSystem typeSystem;
-
     // Init logging delegates to make testing easier
     public ModuleWeaver()
     {
@@ -22,10 +20,9 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        typeSystem = ModuleDefinition.TypeSystem;
-
         foreach (var type in ModuleDefinition.Types.Where(CanHaveWith))
         {
+            RemoveWith(type);
             AddWith(type);
             LogInfo($"Added method 'With' to type '{type.Name}'.");
         }
@@ -33,6 +30,11 @@ public class ModuleWeaver
 
     private bool CanHaveWith(TypeDefinition type)
     {
+        if (!type.GetMethods().Any(m => m.Name.StartsWith("With")))
+        {
+            return false;
+        }
+
         var ctors = type.GetConstructors().ToArray();
         if (ctors.Length != 1)
         {
@@ -46,7 +48,15 @@ public class ModuleWeaver
             return false;
         }
 
-        return parameters.All(par => type.Properties.Any(pro => ToPropertyName(par.Name) == pro.Name));
+        return parameters.All(par => type.Properties.Any(pro => string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0));
+    }
+
+    private void RemoveWith(TypeDefinition type)
+    {
+        foreach (var method in type.GetMethods().Where(m => m.Name.StartsWith("With")).ToArray())
+        {
+            type.Methods.Remove(method);
+        }
     }
 
     private void AddWith(TypeDefinition type)
@@ -55,10 +65,10 @@ public class ModuleWeaver
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            string propertyName = ToPropertyName(property.Name);
-            var getter = type.GetMethods().Where(m => m.Name == $"get_{propertyName}").First();
+            var getter = type.GetMethods().First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
 
-            var methodName = ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType == property.ParameterType) 
+            string propertyName = ToPropertyName(property.Name);
+            var methodName = ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName) 
                 ? $"With{propertyName}" : "With";
             var method = new MethodDefinition(methodName, MethodAttributes.Public, type);
             method.Parameters.Add(new ParameterDefinition(parameterName, ParameterAttributes.None, getter.ReturnType));
@@ -72,7 +82,7 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = type.GetMethods().Where(m => m.Name == $"get_{ToPropertyName(parameter.Name)}").First();
+                    var getterParameter = type.GetMethods().First(m => string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }
