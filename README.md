@@ -1,6 +1,6 @@
 ## This is an add-in for [Fody](https://github.com/Fody/Fody/) 
 
-![Icon](https://raw.github.com/mikhailshilkov/With.Fody/blob/master/Icons/package_icon.png)
+![Icon](https://raw.github.com/mikhailshilkov/With.Fody/master/Icons/package_icon.png)
 
 A Fody addin to extemd immutable C# classes with `With()` methods to return a copy of an object with one field modified.
 
