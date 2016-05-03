@@ -10,7 +10,7 @@
     <licenseUrl>http://www.opensource.org/licenses/mit-license.php</licenseUrl>
     <projectUrl>https://github.com/mikhailshilkov/With.Fody</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <iconUrl>https://raw.github.com/Fody/BasicFodyAddin/master/Icons/package_icon.png</iconUrl>
+    <iconUrl>https://raw.github.com/mikhailshilkov/With.Fody/blob/master/Icons/package_icon.png</iconUrl>
     <description>A Fody addin to add With methods to immutable C# classes, inspired by F# with keyword for records.</description>
     <summary />
     <language>en-UK</language>
