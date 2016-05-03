@@ -2,7 +2,7 @@
 
 ![Icon](https://raw.github.com/mikhailshilkov/With.Fody/master/Icons/package_icon.png)
 
-A Fody addin to extemd immutable C# classes with `With()` methods to return a copy of an object with one field modified.
+A Fody addin to extend immutable C# classes with `With()` methods to return a copy of an object with one field modified.
 
 [Introduction to Fody](http://github.com/Fody/Fody/wiki/SampleUsage).
 
@@ -22,4 +22,4 @@ TODO
 
 ## Icon
 
-Icon courtesy of [The Noun Project](http://thenounproject.com)
+Icon created by Yazmin Alanis from [Noun Project](http://thenounproject.com)

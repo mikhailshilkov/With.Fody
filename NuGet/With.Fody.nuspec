@@ -11,7 +11,7 @@
     <projectUrl>https://github.com/mikhailshilkov/With.Fody</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <iconUrl>https://raw.github.com/mikhailshilkov/With.Fody/master/Icons/package_icon.png</iconUrl>
-    <description>A Fody addin to add With methods to immutable C# classes, inspired by F# with keyword for records.</description>
+    <description>A Fody addin to extend immutable C# classes with `With()` methods to return a copy of an object with one field modified.</description>
     <summary />
     <language>en-UK</language>
     <tags>ILWeaving, Fody, Cecil</tags>
