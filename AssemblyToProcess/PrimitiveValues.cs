@@ -1,4 +1,5 @@
-﻿
+﻿using System;
+
 namespace AssemblyToProcess
 {
     public class PrimitiveValues
@@ -16,6 +17,6 @@ namespace AssemblyToProcess
 
         public long Value3 { get; }
 
-        public PrimitiveValues With(object value) => this;
+        public PrimitiveValues With<T>(T value) => this;
     }
 }

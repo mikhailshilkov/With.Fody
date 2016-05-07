@@ -1,17 +1,6 @@
 ﻿param($installPath, $toolsPath, $package, $project)
 
 
-function RemoveForceProjectLevelHack($project)
-{
-    Write-Host "RemoveForceProjectLevelHack" 
-	Foreach ($item in $project.ProjectItems) 
-	{
-		if ($item.Name -eq "Fody_ToBeDeleted.txt")
-		{
-			$item.Delete()
-		}
-	}
-}
 
 function FlushVariables()
 {
@@ -86,8 +75,6 @@ function UnlockWeaversXml($project)
 }
 
 UnlockWeaversXml($project)
-
-RemoveForceProjectLevelHack $project
 
 Update-FodyConfig $package.Id.Replace(".Fody", "") $project
 

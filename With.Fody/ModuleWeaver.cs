@@ -22,8 +22,8 @@ public class ModuleWeaver
     {
         foreach (var type in ModuleDefinition.Types.Where(CanHaveWith))
         {
-            RemoveWith(type);
             AddWith(type);
+            RemoveGenericWith(type);
             LogInfo($"Added method 'With' to type '{type.Name}'.");
         }
     }
@@ -51,9 +51,9 @@ public class ModuleWeaver
         return parameters.All(par => type.Properties.Any(pro => string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0));
     }
 
-    private void RemoveWith(TypeDefinition type)
+    private void RemoveGenericWith(TypeDefinition type)
     {
-        foreach (var method in type.GetMethods().Where(m => m.Name.StartsWith("With")).ToArray())
+        foreach (var method in type.GetMethods().Where(m => m.Name == "With" && m.HasGenericParameters).ToArray())
         {
             type.Methods.Remove(method);
         }
@@ -65,15 +65,30 @@ public class ModuleWeaver
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = type.GetMethods().First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = type.Methods.First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
 
             string propertyName = ToPropertyName(property.Name);
-            var methodName = ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName) 
-                ? $"With{propertyName}" : "With";
-            var method = new MethodDefinition(methodName, MethodAttributes.Public, type);
-            method.Parameters.Add(new ParameterDefinition(parameterName, ParameterAttributes.None, getter.ReturnType));
+            MethodDefinition method;
+            bool existing = false;
+            if (ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName))
+            {
+                var methodName = $"With{propertyName}";
+                method = type.Methods.FirstOrDefault(m => m.Name == methodName);
+                if (method == null)
+                    continue;
+            }
+            else
+            {
+                method = new MethodDefinition("With", MethodAttributes.Public, type);
+                method.Parameters.Add(new ParameterDefinition(parameterName, ParameterAttributes.None, getter.ReturnType));
+                type.Methods.Add(method);
+            }
 
             var processor = method.Body.GetILProcessor();
+            foreach (var i in processor.Body.Instructions.ToArray())
+            {
+                processor.Remove(i);
+            }
             foreach (var parameter in ctor.Parameters)
             {
                 if (parameter.Name == parameterName)
@@ -89,9 +104,42 @@ public class ModuleWeaver
             }
             processor.Emit(OpCodes.Newobj, ctor);
             processor.Emit(OpCodes.Ret);
-            type.Methods.Add(method);
+            method.Body.OptimizeMacros();
+
+            this.ReplaceCalls(type, method, getter.ReturnType);
         }
     }
+
+    private void ReplaceCalls(TypeDefinition withType, MethodDefinition newMethod, TypeReference argumentType)
+    {
+        foreach (var type in ModuleDefinition.Types)
+        {
+            foreach (var method in type.Methods.Where(x => x.Body != null))
+            {
+                var calls = method.Body.Instructions.Where(i => i.OpCode == OpCodes.Callvirt);
+                foreach (var call in calls)
+                {
+                    var originalMethodReference = (MethodReference)call.Operand;
+                    if (originalMethodReference.IsGenericInstance)
+                    {
+                        var genericMethodReference = originalMethodReference as GenericInstanceMethod;
+                        var originalMethodDefinition = originalMethodReference.Resolve();
+                        var declaringTypeReference = originalMethodReference.DeclaringType;
+                        var declaringTypeDefinition = declaringTypeReference.Resolve();
+
+                        if (declaringTypeDefinition.FullName == withType.FullName
+                            && originalMethodDefinition.Name == newMethod.Name
+                            && genericMethodReference.GenericArguments[0] == argumentType)
+                        {
+                            call.Operand = ModuleDefinition.ImportReference(newMethod);
+                            LogInfo($"Found a call");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 
     private string ToPropertyName(string fieldName)
     {

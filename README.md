@@ -33,7 +33,7 @@ https://nuget.org/packages/With.Fody/
         public OtherClass C2 { get; }
 
         // Needed for IntelliSense/Resharper support
-        public MyClass With(int value) => this;
+        public MyClass With<T>(T value) => this;
         // If two properties have same type, we need to append the property name to With
         public MyClass WithC1(OtherClass value) => this;
         public MyClass WithC2(OtherClass value) => this;

@@ -107,13 +107,25 @@ public class WeaverTests
     }
 
     [Test]
+    public void InAssemblyUsage_Works()
+    {
+        var type = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
+        var runner = (dynamic)Activator.CreateInstance(assembly.GetType("AssemblyToProcess.InAssemblyUsage"));
+        var result = runner.ChangeIntTo3(instance);
+        Assert.AreEqual(3, result.Value1);
+
+        type = assembly.GetType("AssemblyToProcess.PropertiesOfSameType");
+        instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, 2, 3 });
+        result = runner.ChangeValue1To33(instance);
+        Assert.AreEqual(33, result.Value1);
+    }
+
+    [Test]
     public void OriginalWithMethodIsRemoved()
     {
         var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");
-        Assert.False(type1.GetMethods().Any(m => m.Name == "With" && m.GetParameters()[0].ParameterType == typeof(object)));
-
-        var type2 = assembly.GetType("AssemblyToProcess.PropertiesOfSameType");
-        Assert.False(type2.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType == typeof(object)));
+        Assert.False(type1.GetMethods().Any(m => m.Name == "With" && m.IsGenericMethod));
     }
 
 #if(DEBUG)
