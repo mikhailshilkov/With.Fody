@@ -81,6 +81,10 @@ https://nuget.org/packages/With.Fody/
         }
     }
 
+## Motivation
+
+The motivation behind this plugin is explained in the post 
+[Tweaking immutable objects with C# and Fody](http://mikhail.io/2016/05/tweaking-immutable-objects-with-csharp-and-fody/).
 
 ## Icon
 
