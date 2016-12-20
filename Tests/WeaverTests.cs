@@ -138,6 +138,21 @@ public class WeaverTests
     }
 
     [Test]
+    public void UniquePropertyTypeButExplicitMethodName_WithIsEmittedWithLongName()
+    {
+        var type = assembly.GetType("AssemblyToProcess.ExplicitlyAskedForFullName");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+
+        var result1 = instance.WithValue1(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+
+        var result2 = instance.WithValue2("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
+    }
+
+    [Test]
     public void OriginalWithMethodIsRemoved()
     {
         var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");

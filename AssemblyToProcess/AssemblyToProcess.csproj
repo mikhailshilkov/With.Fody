@@ -45,6 +45,7 @@
     <Compile Include="MultipleConstructors.cs" />
     <Compile Include="ConstructorWithSingleArgument.cs" />
     <Compile Include="NoConstructor.cs" />
+    <Compile Include="ExplicitlyAskedForFullName.cs" />
     <Compile Include="PropertyCasing.cs" />
     <Compile Include="PropertiesOfSameType.cs" />
     <Compile Include="PrimitiveValues.cs" />

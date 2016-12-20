@@ -61,7 +61,7 @@ public class ModuleWeaver
 
     private void AddWith(TypeDefinition type)
     {
-        var ctor = type.GetConstructors().Where(c => c.IsPublic).First();
+        var ctor = type.GetConstructors().First(c => c.IsPublic);
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
@@ -69,11 +69,11 @@ public class ModuleWeaver
 
             string propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
-            bool existing = false;
-            if (ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName))
+            var explicitName = $"With{propertyName}";
+            if (type.Methods.Any(m => m.Name == explicitName)
+                || ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName))
             {
-                var methodName = $"With{propertyName}";
-                method = type.Methods.FirstOrDefault(m => m.Name == methodName);
+                method = type.Methods.FirstOrDefault(m => m.Name == explicitName);
                 if (method == null)
                     continue;
             }
