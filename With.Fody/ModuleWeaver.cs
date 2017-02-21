@@ -53,7 +53,7 @@ public class ModuleWeaver
 
     private void RemoveGenericWith(TypeDefinition type)
     {
-        foreach (var method in type.GetMethods().Where(m => m.Name == "With" && m.HasGenericParameters).ToArray())
+        foreach (var method in type.GetMethods().Where(m => m.IsPublic && m.Name == "With" && m.HasGenericParameters).ToArray())
         {
             type.Methods.Remove(method);
         }
