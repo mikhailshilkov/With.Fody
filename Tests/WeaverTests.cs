@@ -15,7 +15,8 @@ public class WeaverTests
     [TestFixtureSetUp]
     public void Setup()
     {
-        var projectPath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, @"..\..\..\AssemblyToProcess\AssemblyToProcess.csproj"));
+        var localPath = new Uri(Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)).LocalPath;
+        var projectPath = Path.GetFullPath(Path.Combine(localPath, @"..\..\..\AssemblyToProcess\AssemblyToProcess.csproj"));
         assemblyPath = Path.Combine(Path.GetDirectoryName(projectPath), @"bin\Debug\AssemblyToProcess.dll");
 #if (!DEBUG)
         assemblyPath = assemblyPath.Replace("Debug", "Release");
@@ -45,6 +46,21 @@ public class WeaverTests
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType != typeof(object)));
+    }
+
+    [Test]
+    public void MultipleConstructorsOnlyOneIsPublic_WithIsInjected()
+    {
+        var type = assembly.GetType("AssemblyToProcess.MultipleConstructorsOnlyOneIsPublic");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
     }
 
     [Test]

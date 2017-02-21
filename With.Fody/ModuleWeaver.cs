@@ -30,12 +30,12 @@ public class ModuleWeaver
 
     private bool CanHaveWith(TypeDefinition type)
     {
-        if (!type.GetMethods().Any(m => m.Name.StartsWith("With")))
+        if (!type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With")))
         {
             return false;
         }
 
-        var ctors = type.GetConstructors().ToArray();
+        var ctors = type.GetConstructors().Where(c => c.IsPublic).ToArray();
         if (ctors.Length != 1)
         {
             return false;
@@ -53,7 +53,7 @@ public class ModuleWeaver
 
     private void RemoveGenericWith(TypeDefinition type)
     {
-        foreach (var method in type.GetMethods().Where(m => m.Name == "With" && m.HasGenericParameters).ToArray())
+        foreach (var method in type.GetMethods().Where(m => m.IsPublic && m.Name == "With" && m.HasGenericParameters).ToArray())
         {
             type.Methods.Remove(method);
         }
@@ -61,7 +61,7 @@ public class ModuleWeaver
 
     private void AddWith(TypeDefinition type)
     {
-        var ctor = type.GetConstructors().First();
+        var ctor = type.GetConstructors().Where(c => c.IsPublic).First();
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;

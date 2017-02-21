@@ -39,6 +39,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="MultipleConstructorsOnlyOneIsPublic.cs" />
     <Compile Include="NoWithStub.cs" />
     <Compile Include="NoMatchingProperty.cs" />
     <Compile Include="MultipleConstructors.cs" />
