@@ -49,6 +49,21 @@ public class WeaverTests
     }
 
     [Test]
+    public void MultipleConstructorsOnlyOneIsPublic_WithIsInjected()
+    {
+        var type = assembly.GetType("AssemblyToProcess.MultipleConstructorsOnlyOneIsPublic");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
+    }
+
+    [Test]
     public void PrimitiveValues_ShortWithIsInjected()
     {
         var type = assembly.GetType("AssemblyToProcess.PrimitiveValues");
