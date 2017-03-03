@@ -42,44 +42,12 @@ public class ModuleWeaver
             .Where(ctor =>
                 ctor.Parameters.Count >= 2 &&
                 ctor.Parameters.All(par =>
-                    GetAllProperties(type).Any(pro =>
+                    type.Properties.Any(pro =>
                         string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0
                     )
                 )
             )
             .FirstOrDefault();
-    }
-
-    private static IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
-    {
-        foreach (var property in type.Properties)
-        {
-            yield return property;
-        }
-
-        if (type.BaseType != null)
-        {
-            foreach (var property in GetAllProperties(type.BaseType.Resolve()))
-            {
-                yield return property;
-            }
-        }
-    }
-
-    private static IEnumerable<MethodDefinition> GetAllGetters(TypeDefinition type)
-    {
-        foreach (var method in type.Methods.Where(m => m.IsGetter))
-        {
-            yield return method;
-        }
-
-        if (type.BaseType != null)
-        {
-            foreach (var method in GetAllGetters(type.BaseType.Resolve()))
-            {
-                yield return method;
-            }
-        }
     }
 
     private void RemoveGenericWith(TypeDefinition type)
@@ -103,7 +71,7 @@ public class ModuleWeaver
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = GetAllGetters(type).First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
 
             string propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
@@ -135,7 +103,7 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = GetAllGetters(type).First(m => string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+                    var getterParameter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }
