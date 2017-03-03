@@ -170,6 +170,13 @@ public class WeaverTests
     public void OriginalWithMethodIsRemoved()
     {
         var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        // check for the generic With method
+        Assert.False(type1.GetMethods().Any(m =>
+            m.IsPublic &&
+            m.Name == "With" &&
+            m.IsGenericMethod &&
+            m.GetParameters().Length == 1));
+        // check for a With method with Object parameter
         Assert.False(type1.GetMethods().Any(m => 
             m.IsPublic &&
             m.Name == "With" && 
