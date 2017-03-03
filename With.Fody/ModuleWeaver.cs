@@ -3,6 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Mono.Cecil.Cil;
+using System.Collections.Generic;
 
 public class ModuleWeaver
 {
@@ -20,52 +21,89 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        foreach (var type in ModuleDefinition.Types.Where(CanHaveWith))
+        foreach (var type in ModuleDefinition.Types)
         {
-            AddWith(type);
-            RemoveGenericWith(type);
-            LogInfo($"Added method 'With' to type '{type.Name}'.");
+            if (type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With")))
+            {
+                var ctor = GetValidConstructor(type);
+                if (ctor != null)
+                {
+                    AddWith(type, ctor);
+                    RemoveGenericWith(type);
+                    LogInfo($"Added method 'With' to type '{type.Name}'.");
+                }
+            }
         }
     }
 
-    private bool CanHaveWith(TypeDefinition type)
+    private static MethodDefinition GetValidConstructor(TypeDefinition type)
     {
-        if (!type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With")))
+        return type.GetConstructors()
+            .Where(ctor =>
+                ctor.Parameters.Count >= 2 &&
+                ctor.Parameters.All(par =>
+                    GetAllProperties(type).Any(pro =>
+                        string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0
+                    )
+                )
+            )
+            .FirstOrDefault();
+    }
+
+    private static IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
+    {
+        foreach (var property in type.Properties)
         {
-            return false;
+            yield return property;
         }
 
-        var ctors = type.GetConstructors().Where(c => c.IsPublic).ToArray();
-        if (ctors.Length != 1)
+        if (type.BaseType != null)
         {
-            return false;
+            foreach (var property in GetAllProperties(type.BaseType.Resolve()))
+            {
+                yield return property;
+            }
+        }
+    }
+
+    private static IEnumerable<MethodDefinition> GetAllGetters(TypeDefinition type)
+    {
+        foreach (var method in type.Methods.Where(m => m.IsGetter))
+        {
+            yield return method;
         }
 
-        var ctor = ctors[0];
-        var parameters = ctor.Parameters;
-        if (parameters.Count < 2)
+        if (type.BaseType != null)
         {
-            return false;
+            foreach (var method in GetAllGetters(type.BaseType.Resolve()))
+            {
+                yield return method;
+            }
         }
-
-        return parameters.All(par => type.Properties.Any(pro => string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0));
     }
 
     private void RemoveGenericWith(TypeDefinition type)
     {
-        foreach (var method in type.GetMethods().Where(m => m.IsPublic && m.Name == "With" && m.HasGenericParameters).ToArray())
+        var method = type.GetMethods()
+            .Where(m =>
+                m.IsPublic &&
+                m.Name == "With" &&
+                m.Parameters.Count == 1 &&
+                m.Parameters[0].ParameterType.FullName == "System.Object")
+            .FirstOrDefault();
+
+        if(method != null)
         {
             type.Methods.Remove(method);
         }
     }
 
-    private void AddWith(TypeDefinition type)
+    private void AddWith(TypeDefinition type, MethodDefinition ctor)
     {
-        var ctor = type.GetConstructors().First(c => c.IsPublic);
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = type.Methods.First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = GetAllGetters(type).First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
 
             string propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
@@ -97,7 +135,7 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = type.GetMethods().First(m => string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+                    var getterParameter = GetAllGetters(type).First(m => string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }

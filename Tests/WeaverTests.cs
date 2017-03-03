@@ -39,13 +39,27 @@ public class WeaverTests
 
     [TestCase("NoConstructor")]
     [TestCase("ConstructorWithSingleArgument")]
-    [TestCase("MultipleConstructors")]
     [TestCase("NoMatchingProperty")]
     [TestCase("NoWithStub")]
     public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType != typeof(object)));
+    }
+
+    [Test]
+    public void MultipleConstructors_WithIsInjected()
+    {
+        var type = assembly.GetType("AssemblyToProcess.MultipleConstructors");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
     }
 
     [Test]
@@ -156,7 +170,11 @@ public class WeaverTests
     public void OriginalWithMethodIsRemoved()
     {
         var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");
-        Assert.False(type1.GetMethods().Any(m => m.Name == "With" && m.IsGenericMethod));
+        Assert.False(type1.GetMethods().Any(m => 
+            m.IsPublic &&
+            m.Name == "With" && 
+            m.GetParameters().Length == 1 &&
+            m.GetParameters()[0].ParameterType == typeof(object)));
     }
 
 #if(DEBUG)
