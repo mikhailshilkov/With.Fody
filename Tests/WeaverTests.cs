@@ -51,15 +51,22 @@ public class WeaverTests
     public void MultipleConstructors_WithIsInjected()
     {
         var type = assembly.GetType("AssemblyToProcess.MultipleConstructors");
-        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
 
         var result1 = instance.With(123);
         Assert.AreEqual(123, result1.Value1);
         Assert.AreEqual(instance.Value2, result1.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
 
         var result2 = instance.With("World");
         Assert.AreEqual(instance.Value1, result2.Value1);
         Assert.AreEqual("World", result2.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result3 = instance.With((long)31231);
+        Assert.AreEqual(instance.Value1, result3.Value1);
+        Assert.AreEqual(instance.Value2, result3.Value2);
+        Assert.AreEqual(31231, result3.Value3);
     }
 
     [Test]
