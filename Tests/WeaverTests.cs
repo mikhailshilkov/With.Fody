@@ -47,10 +47,11 @@ public class WeaverTests
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType != typeof(object)));
     }
 
-    [Test]
-    public void MultipleConstructors_WithIsInjected()
+    [TestCase("MultipleConstructors")]
+    [TestCase("MultipleConstructors2")]
+    public void MultipleConstructors_WithIsInjected(string typeName)
     {
-        var type = assembly.GetType("AssemblyToProcess.MultipleConstructors");
+        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
 
         var result1 = instance.With(123);
