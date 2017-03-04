@@ -34,25 +34,20 @@ public class ModuleWeaver
         }
     }
 
+    private static bool IsPair(PropertyDefinition pro, ParameterDefinition par)
+    {
+        return 
+            par.ParameterType.FullName == pro.PropertyType.FullName &&
+            String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0;
+    }
+
     private static MethodDefinition GetValidConstructor(TypeDefinition type)
     {
-        var a = type.GetConstructors().SelectMany(ctor => ctor.Parameters).Select(par => par.ParameterType);
-        var b = type.Properties.Select(pro => pro.PropertyType);
         return type.GetConstructors()
             .Where(ctor =>
                 ctor.Parameters.Count >= 2 &&
-                ctor.Parameters.All(par =>
-                    type.Properties.Any(pro =>
-                        par.ParameterType.FullName == pro.PropertyType.FullName &&
-                        String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0
-                    )
-                ) &&
-                type.Properties.All(pro =>
-                    ctor.Parameters.Any(par =>
-                        par.ParameterType.FullName == pro.PropertyType.FullName &&
-                        String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0
-                    )
-                )
+                ctor.Parameters.All(par => type.Properties.Any(pro => IsPair(pro, par))) &&
+                type.Properties.All(pro => ctor.Parameters.Any(par => IsPair(pro, par)))
             )
             .FirstOrDefault();
     }
