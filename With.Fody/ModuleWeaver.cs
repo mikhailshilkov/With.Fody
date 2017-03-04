@@ -3,6 +3,7 @@ using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
 using Mono.Cecil.Cil;
+using System.Collections.Generic;
 
 public class ModuleWeaver
 {
@@ -20,35 +21,35 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        foreach (var type in ModuleDefinition.Types.Where(CanHaveWith))
+        foreach (var type in ModuleDefinition.Types
+            .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
-            AddWith(type);
-            RemoveGenericWith(type);
-            LogInfo($"Added method 'With' to type '{type.Name}'.");
+            var ctor = GetValidConstructor(type);
+            if (ctor != null)
+            {
+                AddWith(type, ctor);
+                RemoveGenericWith(type);
+                LogInfo($"Added method 'With' to type '{type.Name}'.");
+            }
         }
     }
 
-    private bool CanHaveWith(TypeDefinition type)
+    private static bool IsPair(PropertyDefinition pro, ParameterDefinition par)
     {
-        if (!type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With")))
-        {
-            return false;
-        }
+        return 
+            par.ParameterType.FullName == pro.PropertyType.FullName &&
+            String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0;
+    }
 
-        var ctors = type.GetConstructors().Where(c => c.IsPublic).ToArray();
-        if (ctors.Length != 1)
-        {
-            return false;
-        }
-
-        var ctor = ctors[0];
-        var parameters = ctor.Parameters;
-        if (parameters.Count < 2)
-        {
-            return false;
-        }
-
-        return parameters.All(par => type.Properties.Any(pro => string.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0));
+    private static MethodDefinition GetValidConstructor(TypeDefinition type)
+    {
+        return type.GetConstructors()
+            .Where(ctor =>
+                ctor.Parameters.Count >= 2 &&
+                ctor.Parameters.All(par => type.Properties.Any(pro => IsPair(pro, par))) &&
+                type.Properties.All(pro => ctor.Parameters.Any(par => IsPair(pro, par)))
+            )
+            .FirstOrDefault();
     }
 
     private void RemoveGenericWith(TypeDefinition type)
@@ -59,13 +60,12 @@ public class ModuleWeaver
         }
     }
 
-    private void AddWith(TypeDefinition type)
+    private void AddWith(TypeDefinition type, MethodDefinition ctor)
     {
-        var ctor = type.GetConstructors().First(c => c.IsPublic);
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = type.Methods.First(m => string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
 
             string propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
@@ -97,7 +97,7 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = type.GetMethods().First(m => string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+                    var getterParameter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }

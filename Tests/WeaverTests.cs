@@ -39,13 +39,35 @@ public class WeaverTests
 
     [TestCase("NoConstructor")]
     [TestCase("ConstructorWithSingleArgument")]
-    [TestCase("MultipleConstructors")]
     [TestCase("NoMatchingProperty")]
     [TestCase("NoWithStub")]
     public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && !(m.IsGenericMethod && m.GetParameters().Length == 1)));
+    }
+
+    [TestCase("MultipleConstructors")]
+    [TestCase("MultipleConstructors2")]
+    public void MultipleConstructors_WithIsInjected(string typeName)
+    {
+        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result3 = instance.With((long)31231);
+        Assert.AreEqual(instance.Value1, result3.Value1);
+        Assert.AreEqual(instance.Value2, result3.Value2);
+        Assert.AreEqual(31231, result3.Value3);
     }
 
     [Test]
