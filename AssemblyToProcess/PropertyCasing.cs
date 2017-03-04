@@ -13,6 +13,6 @@ namespace AssemblyToProcess
 
         public string vaLue2 { get; }
 
-        public PropertyCasing With(object value) => this;
+        public PropertyCasing With<T>(T value) => this;
     }
 }

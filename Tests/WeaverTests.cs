@@ -44,7 +44,7 @@ public class WeaverTests
     public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
-        Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && m.GetParameters()[0].ParameterType != typeof(object)));
+        Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && !(m.IsGenericMethod && m.GetParameters().Length == 1)));
     }
 
     [TestCase("MultipleConstructors")]

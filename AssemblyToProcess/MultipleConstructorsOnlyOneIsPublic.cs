@@ -19,6 +19,6 @@
 
         public string Value2 { get; }
 
-        public MultipleConstructorsOnlyOneIsPublic With(object value) => this;
+        public MultipleConstructorsOnlyOneIsPublic With<T>(T value) => this;
     }
 }
