@@ -21,17 +21,15 @@ public class ModuleWeaver
 
     public void Execute()
     {
-        foreach (var type in ModuleDefinition.Types)
+        foreach (var type in ModuleDefinition.Types
+            .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
-            if (type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With")))
+            var ctor = GetValidConstructor(type);
+            if (ctor != null)
             {
-                var ctor = GetValidConstructor(type);
-                if (ctor != null)
-                {
-                    AddWith(type, ctor);
-                    RemoveGenericWith(type);
-                    LogInfo($"Added method 'With' to type '{type.Name}'.");
-                }
+                AddWith(type, ctor);
+                RemoveGenericWith(type);
+                LogInfo($"Added method 'With' to type '{type.Name}'.");
             }
         }
     }
@@ -52,15 +50,7 @@ public class ModuleWeaver
 
     private void RemoveGenericWith(TypeDefinition type)
     {
-        var method = type.GetMethods()
-            .Where(m =>
-                m.IsPublic &&
-                m.Name == "With" &&
-                m.Parameters.Count == 1 &&
-                m.Parameters[0].ParameterType.FullName == "System.Object")
-            .FirstOrDefault();
-
-        if(method != null)
+        foreach (var method in type.GetMethods().Where(m => m.IsPublic && m.Name == "With" && m.HasGenericParameters).ToArray())
         {
             type.Methods.Remove(method);
         }
