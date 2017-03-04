@@ -12,6 +12,6 @@
 
         public string Value2 { get; set; }
 
-        public NoMatchingProperty With(object value) => this;
+        public NoMatchingProperty With<T>(T value) => this;
     }
 }

@@ -6,6 +6,6 @@
 
         public string Value2 { get; set; }
 
-        public NoConstructor With(object value) => this;
+        public NoConstructor With<T>(T value) => this;
     }
 }

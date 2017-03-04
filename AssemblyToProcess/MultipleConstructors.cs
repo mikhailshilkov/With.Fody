@@ -17,6 +17,6 @@
 
         public string Value2 { get; set; }
 
-        public MultipleConstructors With(object value) => this;
+        public MultipleConstructors With<T>(T value) => this;
     }
 }

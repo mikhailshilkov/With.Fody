@@ -11,6 +11,6 @@
 
         public string Value2 { get; set; }
 
-        public ConstructorWithSingleArgument With(object value) => this;
+        public ConstructorWithSingleArgument With<T>(T value) => this;
     }
 }
