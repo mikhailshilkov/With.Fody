@@ -42,7 +42,7 @@ public class WeaverTests
     [TestCase("MultipleConstructors")]
     [TestCase("NoMatchingProperty")]
     [TestCase("NoWithStub")]
-    public void DoesNotSatisfyAllRules_GenericWithIsNotRemoved(string typeName)
+    public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
     {
         var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && !(m.IsGenericMethod && m.GetParameters().Length == 1)));
