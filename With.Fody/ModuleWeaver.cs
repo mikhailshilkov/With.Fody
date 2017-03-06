@@ -24,12 +24,18 @@ public class ModuleWeaver
         foreach (var type in ModuleDefinition.Types
             .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
-            var ctor = GetValidConstructor(type);
-            if (ctor != null)
+            try
             {
-                AddWith(type, ctor);
-                RemoveGenericWith(type);
-                LogInfo($"Added method 'With' to type '{type.Name}'.");
+                var ctor = GetValidConstructor(type);
+                if (ctor != null)
+                {
+                    AddWith(type, ctor);
+                    RemoveGenericWith(type);
+                    LogInfo($"Added method 'With' to type '{type.Name}'.");
+                }
+            }
+            catch (AssemblyResolutionException ex) {
+                LogInfo($"Type '{type.Name}' references another assembly '{ex.AssemblyReference.FullName}'.");
             }
         }
     }
