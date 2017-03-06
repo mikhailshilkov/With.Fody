@@ -8,6 +8,12 @@ using NUnit.Framework;
 [TestFixture]
 public class WeaverTests
 {
+#if (DEBUG)
+    const string Configuration = "Debug";
+#else
+    const string Configuration = "Release";
+#endif
+
     Assembly assembly;
     string newAssemblyPath;
     string assemblyPath;
@@ -16,25 +22,32 @@ public class WeaverTests
     public void Setup()
     {
         var localPath = new Uri(Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)).LocalPath;
-        var projectPath = Path.GetFullPath(Path.Combine(localPath, @"..\..\..\AssemblyToProcess\AssemblyToProcess.csproj"));
-        assemblyPath = Path.Combine(Path.GetDirectoryName(projectPath), @"bin\Debug\AssemblyToProcess.dll");
-#if (!DEBUG)
-        assemblyPath = assemblyPath.Replace("Debug", "Release");
-#endif
+        var assemblyProcessBinPath = Path.GetFullPath(Path.Combine(localPath, @"..\..\..\AssemblyToProcess\bin\" + Configuration));
+        assemblyPath = Path.Combine(assemblyProcessBinPath, "AssemblyToProcess.dll");
 
         newAssemblyPath = assemblyPath.Replace(".dll", "2.dll");
         File.Copy(assemblyPath, newAssemblyPath, true);
 
+        var assemblyResolver = new DefaultAssemblyResolver();
+        assemblyResolver.AddSearchDirectory(assemblyProcessBinPath);
+
         var moduleDefinition = ModuleDefinition.ReadModule(newAssemblyPath);
+
         var weavingTask = new ModuleWeaver
         {
-            ModuleDefinition = moduleDefinition
+            ModuleDefinition = moduleDefinition,
+            AssemblyResolver = assemblyResolver,
         };
 
         weavingTask.Execute();
         moduleDefinition.Write(newAssemblyPath);
 
         assembly = Assembly.LoadFile(newAssemblyPath);
+
+        AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
+        {
+            return Assembly.LoadFrom(Path.Combine(assemblyProcessBinPath, @"ReferenceAssembly.dll"));
+        };
     }
 
     [TestCase("NoConstructor")]
@@ -70,10 +83,11 @@ public class WeaverTests
         Assert.AreEqual(31231, result3.Value3);
     }
 
-    [Test]
-    public void Inheritance_WithIsInjected()
+    [TestCase("Inheritance")]
+    [TestCase("ReferenceInheritance")]
+    public void Inheritance_WithIsInjected(string typeName)
     {
-        var type = assembly.GetType("AssemblyToProcess.Inheritance");
+        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", 234234L });
 
         var result1 = instance.With(123);

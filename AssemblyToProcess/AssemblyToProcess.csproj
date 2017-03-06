@@ -52,6 +52,7 @@
     <Compile Include="PropertiesOfSameType.cs" />
     <Compile Include="PrimitiveValues.cs" />
     <Compile Include="InAssemblyUsage.cs" />
+    <Compile Include="ReferenceInheritance.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReferenceAssembly\ReferenceAssembly.csproj">

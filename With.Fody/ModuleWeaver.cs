@@ -8,7 +8,13 @@ using System.Collections.Generic;
 public class ModuleWeaver
 {
     // Will log an informational message to MSBuild
-    public Action<string> LogInfo { get; set; }
+    public Action<string> LogInfo { get; set; } 
+
+    // Will log an error message to MSBuild. 
+    public Action<string> LogError { get; set; }
+
+    // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. 
+    public IAssemblyResolver AssemblyResolver { get; set; }
 
     // An instance of Mono.Cecil.ModuleDefinition for processing
     public ModuleDefinition ModuleDefinition { get; set; }
@@ -17,6 +23,7 @@ public class ModuleWeaver
     public ModuleWeaver()
     {
         LogInfo = m => { };
+        LogError = m => { };
     }
 
     public void Execute()
@@ -35,7 +42,7 @@ public class ModuleWeaver
                 }
             }
             catch (AssemblyResolutionException ex) {
-                LogInfo($"Type '{type.Name}' references another assembly '{ex.AssemblyReference.FullName}'.");
+                LogError($"Failed to resolve assembly '{ex.AssemblyReference.FullName}'.");
             }
         }
     }
@@ -47,7 +54,7 @@ public class ModuleWeaver
             String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0;
     }
 
-    private static MethodDefinition GetValidConstructor(TypeDefinition type)
+    private MethodDefinition GetValidConstructor(TypeDefinition type)
     {
         return type.GetConstructors()
             .Where(ctor =>
@@ -147,21 +154,34 @@ public class ModuleWeaver
     }
 
 
-    private static string ToPropertyName(string fieldName)
+    private string ToPropertyName(string fieldName)
     {
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
     }
 
-    private static IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
+    private TypeDefinition ResolveType(TypeReference type)
+    {
+        //var scope = type.Scope;
+        //if(scope is ModuleDefinition)
+        //{
+        //    var moduleDefinition = (ModuleDefinition)scope;
+        //    var baseTypeAssembly = AssemblyResolver.Resolve(moduleDefinition.Assembly.FullName);
+        //    return baseTypeAssembly.MainModule.GetType(type.FullName);
+        //}
+
+        return type.Resolve();
+    }
+
+    private IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
     {
         // get recursively through the hierachy all the properties with a public getter
         return type.Properties.Where(pro => pro.GetMethod.IsPublic)
             .Concat(type.BaseType == null ?
                 Enumerable.Empty<PropertyDefinition>() :
-                GetAllProperties(type.BaseType.Resolve()));
+                GetAllProperties(ResolveType(type.BaseType)));
     }
 
-    private static MethodDefinition GetPropertyGetter(TypeDefinition type, string name)
+    private MethodDefinition GetPropertyGetter(TypeDefinition type, string name)
     {
         // get the getter for the property anywhere in the hierachy with the given name
         return GetAllProperties(type)
