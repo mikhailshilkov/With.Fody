@@ -165,9 +165,8 @@ public class ModuleWeaver
     {
         // get the getter for the property anywhere in the hierachy with the given name
         return GetAllProperties(type)
-            .Where(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
-            .Select(pro => pro.GetMethod)
-            .First();
+            .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
+            .GetMethod;
     }
 
 }
