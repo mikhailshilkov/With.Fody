@@ -71,6 +71,28 @@ public class WeaverTests
     }
 
     [Test]
+    public void Inheritance_WithIsInjected()
+    {
+        var type = assembly.GetType("AssemblyToProcess.Inheritance");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", 234234L });
+
+        var result1 = instance.With(123);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result2 = instance.With("World");
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result3 = instance.With(31231L);
+        Assert.AreEqual(instance.Value1, result3.Value1);
+        Assert.AreEqual(instance.Value2, result3.Value2);
+        Assert.AreEqual(31231L, result3.Value3);
+    }
+
+    [Test]
     public void MultipleConstructorsOnlyOneIsPublic_WithIsInjected()
     {
         var type = assembly.GetType("AssemblyToProcess.MultipleConstructorsOnlyOneIsPublic");
