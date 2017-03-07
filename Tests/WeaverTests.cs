@@ -86,6 +86,25 @@ public class WeaverTests
     }
 
     [Test]
+    public void NoMatchingParameter_WithIsInjectedForOtherParameters()
+    {
+        var type = assembly.GetType("AssemblyToProcess.NoMatchingParameter");
+        var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, 2 });
+
+        var result1 = instance.WithValue1(111);
+        Assert.AreEqual(111, result1.Value1);
+        Assert.AreEqual(instance.Value2, result1.Value2);
+        Assert.AreEqual(result1.Value1 + result1.Value2, result1.Sum);
+
+        var result2 = instance.WithValue2(222);
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual(222, result2.Value2);
+        Assert.AreEqual(result2.Value1 + result2.Value2, result2.Sum);
+
+        Assert.False(type.GetMethods().Any(m => m.Name == "WithSum"));
+    }
+
+    [Test]
     public void PrimitiveValues_ShortWithIsInjected()
     {
         var type = assembly.GetType("AssemblyToProcess.PrimitiveValues");
