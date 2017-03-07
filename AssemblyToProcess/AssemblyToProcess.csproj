@@ -42,6 +42,7 @@
     <Compile Include="Inheritance.cs" />
     <Compile Include="MultipleConstructors2.cs" />
     <Compile Include="MultipleConstructorsOnlyOneIsPublic.cs" />
+    <Compile Include="NoMatchingParameter.cs" />
     <Compile Include="NoWithStub.cs" />
     <Compile Include="NoMatchingProperty.cs" />
     <Compile Include="MultipleConstructors.cs" />
