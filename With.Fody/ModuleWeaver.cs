@@ -22,7 +22,9 @@ public class ModuleWeaver
     public void Execute()
     {
         foreach (var type in ModuleDefinition.Types
-            .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
+            .Where(type =>
+                !type.CustomAttributes.Any(atr => atr.GetType() == typeof(NoWithAttribute)) &&
+                type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
             var ctor = GetValidConstructor(type);
             if (ctor != null)
@@ -41,13 +43,13 @@ public class ModuleWeaver
             String.Compare(par.Name, pro.Name, StringComparison.InvariantCultureIgnoreCase) == 0;
     }
 
-    private static MethodDefinition GetValidConstructor(TypeDefinition type)
+    private MethodDefinition GetValidConstructor(TypeDefinition type)
     {
         return type.GetConstructors()
             .Where(ctor =>
                 ctor.Parameters.Count >= 2 &&
-                ctor.Parameters.All(par => type.Properties.Any(pro => IsPair(pro, par))) &&
-                type.Properties.All(pro => ctor.Parameters.Any(par => IsPair(pro, par)))
+                ctor.Parameters.All(par => GetProperties(type).Any(pro => IsPair(pro, par))) &&
+                GetProperties(type).All(pro => ctor.Parameters.Any(par => IsPair(pro, par)))
             )
             .FirstOrDefault();
     }
@@ -65,7 +67,9 @@ public class ModuleWeaver
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = GetProperties(type)
+                .First(m => string.Compare(m.Name, property.Name, StringComparison.InvariantCultureIgnoreCase) == 0)
+                .GetMethod;
 
             string propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
@@ -97,7 +101,9 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+                    var getterParameter = GetProperties(type)
+                        .First(m => string.Compare(m.Name, parameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0)
+                        .GetMethod;
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }
@@ -144,5 +150,12 @@ public class ModuleWeaver
     private string ToPropertyName(string fieldName)
     {
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
+    }
+
+    public IEnumerable<PropertyDefinition> GetProperties(TypeDefinition type)
+    {
+        return type.Properties.Where(pro =>
+            pro.GetMethod.IsPublic &&
+            !pro.CustomAttributes.Any(atr => atr.AttributeType.FullName == ModuleDefinition.ImportReference(typeof(NoWithAttribute)).FullName));
     }
 }
