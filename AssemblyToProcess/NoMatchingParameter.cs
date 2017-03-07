@@ -2,11 +2,6 @@
 {
     public class NoMatchingParameter
     {
-        public NoMatchingParameter(int value1)
-            : this(value1, 1)
-        {
-        }
-
         public NoMatchingParameter(int value1, int value2)
         {
             this.Value1 = value1;
