@@ -67,5 +67,11 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AssemblyToReference\AssemblyToReference.csproj">
+      <Project>{582b69be-4f4a-4440-a0fa-87a1b7758032}</Project>
+      <Name>AssemblyToReference</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
