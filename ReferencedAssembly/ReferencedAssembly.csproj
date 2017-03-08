@@ -1,16 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{E97E649F-B703-47E3-B18A-0871D3498742}</ProjectGuid>
+    <ProjectGuid>{1339AA3A-8712-4F25-B000-9E589D5B1284}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AssemblyToProcess</RootNamespace>
-    <AssemblyName>AssemblyToProcess</AssemblyName>
+    <RootNamespace>ReferencedAssembly</RootNamespace>
+    <AssemblyName>ReferencedAssembly</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -36,30 +37,19 @@
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Inheritance.cs" />
-    <Compile Include="MultipleConstructors2.cs" />
-    <Compile Include="MultipleConstructorsOnlyOneIsPublic.cs" />
-    <Compile Include="NoMatchingParameter.cs" />
-    <Compile Include="NoWithStub.cs" />
-    <Compile Include="NoMatchingProperty.cs" />
-    <Compile Include="MultipleConstructors.cs" />
-    <Compile Include="ConstructorWithSingleArgument.cs" />
-    <Compile Include="NoConstructor.cs" />
-    <Compile Include="ExplicitlyAskedForFullName.cs" />
-    <Compile Include="PropertyCasing.cs" />
-    <Compile Include="PropertiesOfSameType.cs" />
-    <Compile Include="PrimitiveValues.cs" />
-    <Compile Include="InAssemblyUsage.cs" />
-    <Compile Include="InheritanceFromAnotherAssembly.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ReferencedAssembly\ReferencedAssembly.csproj">
-      <Project>{1339aa3a-8712-4f25-b000-9e589d5b1284}</Project>
-      <Name>ReferencedAssembly</Name>
-    </ProjectReference>
+    <Compile Include="ReferencedBaseInheritance.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
 </Project>

@@ -24,12 +24,18 @@ public class ModuleWeaver
         foreach (var type in ModuleDefinition.Types
             .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
-            var ctor = GetValidConstructor(type);
-            if (ctor != null)
+            try
             {
-                AddWith(type, ctor);
-                RemoveGenericWith(type);
-                LogInfo($"Added method 'With' to type '{type.Name}'.");
+                var ctor = GetValidConstructor(type);
+                if (ctor != null)
+                {
+                    AddWith(type, ctor);
+                    RemoveGenericWith(type);
+                    LogInfo($"Added method 'With' to type '{type.Name}'.");
+                }
+            }
+            catch (AssemblyResolutionException ex) {
+                LogInfo($"Type '{type.Name}' references another assembly '{ex.AssemblyReference.FullName}'.");
             }
         }
     }
@@ -44,7 +50,7 @@ public class ModuleWeaver
     private static MethodDefinition GetValidConstructor(TypeDefinition type)
     {
         return type.GetConstructors()
-            .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => type.Properties.Any(pro => IsPair(pro, par))))
+            .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => GetAllProperties(type).Any(pro => IsPair(pro, par))))
             .Aggregate((MethodDefinition)null, (max, next) => next.Parameters.Count > (max?.Parameters.Count ?? -1) ? next : max);
 
     }
@@ -62,9 +68,9 @@ public class ModuleWeaver
         foreach (var property in ctor.Parameters)
         {
             var parameterName = property.Name;
-            var getter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{property.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+            var getter = GetPropertyGetter(type, parameterName);
 
-            string propertyName = ToPropertyName(property.Name);
+            var propertyName = ToPropertyName(property.Name);
             MethodDefinition method;
             var explicitName = $"With{propertyName}";
             if (type.Methods.Any(m => m.Name == explicitName)
@@ -94,7 +100,7 @@ public class ModuleWeaver
                 }
                 else
                 {
-                    var getterParameter = type.Methods.First(m => m.IsGetter && string.Compare(m.Name, $"get_{parameter.Name}", StringComparison.InvariantCultureIgnoreCase) == 0);
+                    var getterParameter = GetPropertyGetter(type, parameter.Name);
                     processor.Emit(OpCodes.Ldarg_0);
                     processor.Emit(OpCodes.Call, getterParameter);
                 }
@@ -138,8 +144,26 @@ public class ModuleWeaver
     }
 
 
-    private string ToPropertyName(string fieldName)
+    private static string ToPropertyName(string fieldName)
     {
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
     }
+
+    private static IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
+    {
+        // get recursively through the hierachy all the properties with a public getter
+        return type.Properties.Where(pro => pro.GetMethod.IsPublic)
+            .Concat(type.BaseType == null ?
+                Enumerable.Empty<PropertyDefinition>() :
+                GetAllProperties(type.BaseType.Resolve()));
+    }
+
+    private static MethodDefinition GetPropertyGetter(TypeDefinition type, string name)
+    {
+        // get the getter for the property anywhere in the hierachy with the given name
+        return GetAllProperties(type)
+            .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
+            .GetMethod;
+    }
+
 }
