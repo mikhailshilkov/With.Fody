@@ -50,7 +50,7 @@ public class ModuleWeaver
     private static MethodDefinition GetValidConstructor(TypeDefinition type)
     {
         return type.GetConstructors()
-            .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => type.Properties.Any(pro => IsPair(pro, par))))
+            .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => GetAllProperties(type).Any(pro => IsPair(pro, par))))
             .Aggregate((MethodDefinition)null, (max, next) => next.Parameters.Count > (max?.Parameters.Count ?? -1) ? next : max);
     }
 
