@@ -40,8 +40,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Inheritance.cs" />
+    <Compile Include="InheritanceFromAnotherAssembly.cs" />
     <Compile Include="MultipleConstructors2.cs" />
     <Compile Include="MultipleConstructorsOnlyOneIsPublic.cs" />
+    <Compile Include="NoMatchingParameter.cs" />
     <Compile Include="NoWithStub.cs" />
     <Compile Include="NoMatchingProperty.cs" />
     <Compile Include="MultipleConstructors.cs" />
@@ -52,12 +54,11 @@
     <Compile Include="PropertiesOfSameType.cs" />
     <Compile Include="PrimitiveValues.cs" />
     <Compile Include="InAssemblyUsage.cs" />
-    <Compile Include="ReferenceInheritance.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\ReferenceAssembly\ReferenceAssembly.csproj">
+    <ProjectReference Include="..\ReferencedAssembly\ReferencedAssembly.csproj">
       <Project>{1339aa3a-8712-4f25-b000-9e589d5b1284}</Project>
-      <Name>ReferenceAssembly</Name>
+      <Name>ReferencedAssembly</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

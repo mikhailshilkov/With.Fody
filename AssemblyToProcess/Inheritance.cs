@@ -8,9 +8,9 @@
             this.Value2 = value2;
         }
 
-        public int Value1 { get; set; }
+        public int Value1 { get; }
 
-        public string Value2 { get; set; }
+        public string Value2 { get; }
 
         public BaseInheritance With<T>(T value) => this;
     }
@@ -23,7 +23,7 @@
             this.Value3 = value3;
         }
 
-        public long Value3 { get; set; }
+        public long Value3 { get; }
 
         public new Inheritance With<T>(T value) => this;
     }

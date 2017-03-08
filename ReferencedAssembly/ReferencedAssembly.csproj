@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{1339AA3A-8712-4F25-B000-9E589D5B1284}</ProjectGuid>
+    <ProjectGuid>{F80A2842-7FA8-4406-9439-A0F067D1FC4D}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ReferenceAssembly</RootNamespace>
-    <AssemblyName>ReferenceAssembly</AssemblyName>
+    <RootNamespace>ReferencedAssembly</RootNamespace>
+    <AssemblyName>ReferencedAssembly</AssemblyName>
     <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -41,7 +41,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BaseInheritance.cs" />
+    <Compile Include="ReferencedBaseInheritance.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
