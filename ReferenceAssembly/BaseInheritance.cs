@@ -8,8 +8,8 @@
             this.Value2 = value2;
         }
 
-        public int Value1 { get; set; }
+        public int Value1 { get; }
 
-        public string Value2 { get; set; }
+        public string Value2 { get; }
     }
 }

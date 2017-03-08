@@ -8,7 +8,7 @@
             this.Value3 = value3;
         }
 
-        public long Value3 { get; set; }
+        public long Value3 { get; }
 
         public ReferenceInheritance With<T>(T value) => this;
     }
