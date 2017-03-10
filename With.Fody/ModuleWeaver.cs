@@ -10,9 +10,6 @@ public class ModuleWeaver
     // Will log an informational message to MSBuild
     public Action<string> LogInfo { get; set; } 
 
-    // Will log an error message to MSBuild. 
-    public Action<string> LogError { get; set; }
-
     // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. 
     public IAssemblyResolver AssemblyResolver { get; set; }
 
@@ -23,7 +20,6 @@ public class ModuleWeaver
     public ModuleWeaver()
     {
         LogInfo = m => { };
-        LogError = m => { };
     }
 
     public void Execute()
@@ -44,7 +40,7 @@ public class ModuleWeaver
                 }
             }
             catch (AssemblyResolutionException ex) {
-                LogError($"Failed to resolve assembly '{ex.AssemblyReference.FullName}'.");
+                LogInfo($"Method 'With' not added to type '{type.Name}'. Failed to resolve assembly '{ex.AssemblyReference.FullName}'.");
             }
         }
     }
