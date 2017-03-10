@@ -46,7 +46,7 @@ public class WeaverTests
 
         AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
         {
-            return Assembly.LoadFrom(Path.Combine(assemblyProcessBinPath, @"ReferenceAssembly.dll"));
+            return Assembly.LoadFrom(Path.Combine(assemblyProcessBinPath, @"ReferencedAssembly.dll"));
         };
     }
 

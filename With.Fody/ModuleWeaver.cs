@@ -29,7 +29,9 @@ public class ModuleWeaver
     public void Execute()
     {
         foreach (var type in ModuleDefinition.Types
-            .Where(type => type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
+            .Where(type => 
+                type.Name != "<Module>" && 
+                type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
             try
             {
@@ -59,7 +61,6 @@ public class ModuleWeaver
         return type.GetConstructors()
             .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => GetAllProperties(type).Any(pro => IsPair(pro, par))))
             .Aggregate((MethodDefinition)null, (max, next) => next.Parameters.Count > (max?.Parameters.Count ?? -1) ? next : max);
-
     }
 
     private void RemoveGenericWith(TypeDefinition type)
@@ -150,41 +151,41 @@ public class ModuleWeaver
         }
     }
 
-
     private static string ToPropertyName(string fieldName)
     {
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
     }
 
-    private TypeDefinition ResolveType(TypeReference type)
-    {
-        //var scope = type.Scope;
-        //if(scope is ModuleDefinition)
-        //{
-        //    var moduleDefinition = (ModuleDefinition)scope;
-        //    var baseTypeAssembly = AssemblyResolver.Resolve(moduleDefinition.Assembly.FullName);
-        //    return baseTypeAssembly.MainModule.GetType(type.FullName);
-        //}
-
-        return type.Resolve();
-    }
-
-
     private IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
     {
         // get recursively through the hierachy all the properties with a public getter
-        return type.Properties.Where(pro => pro.GetMethod.IsPublic)
+        return type.Properties
+            .Where(pro => pro.GetMethod.IsPublic)
             .Concat(type.BaseType == null ?
                 Enumerable.Empty<PropertyDefinition>() :
-                GetAllProperties(ResolveType(type.BaseType)));
+                GetAllProperties(type.BaseType));
     }
 
-    private MethodDefinition GetPropertyGetter(TypeDefinition type, string name)
+    private IEnumerable<PropertyDefinition> GetAllProperties(TypeReference type)
+    {
+        // import type if it's in a referenced assembly
+        var assemblyName = type.Scope as AssemblyNameReference;
+        if (assemblyName != null)
+        {
+            var assembly = AssemblyResolver.Resolve(assemblyName);
+            type = assembly.MainModule.GetType(type.FullName);
+            ModuleDefinition.ImportReference(type);
+        }
+
+        return GetAllProperties(type.Resolve());
+    }
+
+    private MethodReference GetPropertyGetter(TypeDefinition type, string name)
     {
         // get the getter for the property anywhere in the hierachy with the given name
-        return GetAllProperties(type)
+        var getter = GetAllProperties(type)
             .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
             .GetMethod;
+        return ModuleDefinition.ImportReference(getter);
     }
-
 }
