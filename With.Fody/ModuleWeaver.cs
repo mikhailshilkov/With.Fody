@@ -69,52 +69,75 @@ public class ModuleWeaver
 
     private void AddWith(TypeDefinition type, MethodDefinition ctor)
     {
-        foreach (var property in ctor.Parameters)
+        foreach (var withMethod in type.Methods.Where(m => m.IsPublic && m.Name.StartsWith("With")).ToArray())
         {
-            var parameterName = property.Name;
-            var getter = GetPropertyGetter(type, parameterName);
-
-            var propertyName = ToPropertyName(property.Name);
-            MethodDefinition method;
-            var explicitName = $"With{propertyName}";
-            if (type.Methods.Any(m => m.Name == explicitName)
-                || ctor.Parameters.Except(new[] { property }).Any(p => p.ParameterType.FullName == property.ParameterType.FullName))
+            if (withMethod.HasGenericParameters)
             {
-                method = type.Methods.FirstOrDefault(m => m.Name == explicitName);
-                if (method == null)
-                    continue;
-            }
-            else
-            {
-                method = new MethodDefinition("With", MethodAttributes.Public, type);
-                method.Parameters.Add(new ParameterDefinition(parameterName, ParameterAttributes.None, getter.ReturnType));
-                type.Methods.Add(method);
-            }
-
-            var processor = method.Body.GetILProcessor();
-            foreach (var i in processor.Body.Instructions.ToArray())
-            {
-                processor.Remove(i);
-            }
-            foreach (var parameter in ctor.Parameters)
-            {
-                if (parameter.Name == parameterName)
+                if (withMethod.Parameters.Count == 1)
                 {
-                    processor.Emit(OpCodes.Ldarg_1);
+                    // create one 'with' method for each contructor parameter
+                    foreach (var parameter in ctor.Parameters)
+                    {
+                        // step over if type contains explicit 'with' method for this parameter
+                        var propertyName = ToPropertyName(parameter.Name);
+                        var explicitName = $"With{propertyName}";
+                        if (!type.Methods.Any(m => m.Name == explicitName))
+                        {
+                            var methodName = "With";
+                            // append property name if another parameter with same type
+                            if(ctor.Parameters.Except(new[] { parameter }).Any(p => p.ParameterType.FullName == parameter.ParameterType.FullName))
+                            {
+                                methodName += propertyName;
+                            }
+
+                            var method = new MethodDefinition(methodName, MethodAttributes.Public, type);
+                            method.Parameters.Add(new ParameterDefinition(parameter.Name, ParameterAttributes.None, parameter.ParameterType));
+                            type.Methods.Add(method);
+                            AddWith(type, ctor, method);
+
+                            this.ReplaceCalls(type, method, parameter.ParameterType);
+                        }
+                    }
                 }
                 else
                 {
-                    var getterParameter = GetPropertyGetter(type, parameter.Name);
-                    processor.Emit(OpCodes.Ldarg_0);
-                    processor.Emit(OpCodes.Call, getterParameter);
+                    // do nothing
+                    // any use case for a generic multi-parameter with method?
                 }
             }
-            processor.Emit(OpCodes.Newobj, ctor);
-            processor.Emit(OpCodes.Ret);
-            method.Body.OptimizeMacros();
-
-            this.ReplaceCalls(type, method, getter.ReturnType);
+            else
+            {
+                AddWith(type, ctor, withMethod);
+            }
         }
+    }
+
+    public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod)
+    { 
+        var processor = withMethod.Body.GetILProcessor();
+        foreach (var i in processor.Body.Instructions.ToArray())
+        {
+            processor.Remove(i);
+        }
+        foreach (var ctorParameter in ctor.Parameters)
+        {
+            var withParameter = withMethod.Parameters
+                .Select((par, index) => new { Parameter = par, Index = index })
+                .FirstOrDefault(item => String.Compare(item.Parameter.Name, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
+            if (withParameter != null)
+            {
+                processor.Emit(OpCodes.Ldarg, withParameter.Index + 1);
+            }
+            else
+            {
+                var getter = GetPropertyGetter(type, ctorParameter.Name);
+                processor.Emit(OpCodes.Ldarg_0);
+                processor.Emit(OpCodes.Call, getter);
+            }
+        }
+        processor.Emit(OpCodes.Newobj, ctor);
+        processor.Emit(OpCodes.Ret);
+        withMethod.Body.OptimizeMacros();
     }
 
     private void ReplaceCalls(TypeDefinition withType, MethodDefinition newMethod, TypeReference argumentType)
@@ -179,9 +202,12 @@ public class ModuleWeaver
     private MethodReference GetPropertyGetter(TypeDefinition type, string name)
     {
         // get the getter for the property anywhere in the hierachy with the given name
-        var getter = GetAllProperties(type)
-            .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
-            .GetMethod;
-        return ModuleDefinition.ImportReference(getter);
+        var property = GetAllProperties(type)
+            .FirstOrDefault(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0);
+        if (property == null)
+        {
+            return null;
+        }
+        return ModuleDefinition.ImportReference(property.GetMethod);
     }
 }

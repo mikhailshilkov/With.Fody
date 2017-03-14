@@ -12,8 +12,8 @@
 
         public string Value2 { get; }
 
-        public ExplicitlyAskedForFullName WithValue1(int value) => this;
+        public ExplicitlyAskedForFullName WithValue1(int value1) => this;
 
-        public ExplicitlyAskedForFullName WithValue2(string value) => this;
+        public ExplicitlyAskedForFullName WithValue2(string value2) => this;
     }
 }
