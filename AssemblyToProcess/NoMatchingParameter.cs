@@ -14,7 +14,7 @@
 
         public int Sum => Value1 + Value2;
 
-        public NoMatchingParameter WithValue1(int value1) => this;
-        public NoMatchingParameter WithValue2(int value2) => this;
+        public NoMatchingParameter WithValue1(int value) => this;
+        public NoMatchingParameter WithValue2(int value) => this;
     }
 }

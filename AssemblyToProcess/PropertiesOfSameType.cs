@@ -18,10 +18,10 @@ namespace AssemblyToProcess
 
         public int? Value3 { get; }
 
-        public PropertiesOfSameType WithValue1(int? value1) => this;
+        public PropertiesOfSameType WithValue1(int? value) => this;
 
-        public PropertiesOfSameType WithValue2(int? value2) => this;
+        public PropertiesOfSameType WithValue2(int? value) => this;
 
-        public PropertiesOfSameType WithValue3(int? value3) => this;
+        public PropertiesOfSameType WithValue3(int? value) => this;
     }
 }

@@ -102,18 +102,51 @@ public class ModuleWeaver
                 else
                 {
                     // do nothing
-                    // any use case for a generic multi-parameter with method?
+                    // any use case for a generic multi-parameter 'with' method?
                 }
             }
             else
             {
-                AddWith(type, ctor, withMethod);
+                var parameterName = (string)null;
+                if (withMethod.Parameters.Count == 1 && IsExplicitName(withMethod.Name, out parameterName))
+                {
+                    AddWith(type, ctor, withMethod, parameterName);
+                }
+                else
+                {
+                    AddWith(type, ctor, withMethod);
+                }
             }
         }
     }
 
-    public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod)
+    public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod, string parameterName)
     { 
+        var processor = withMethod.Body.GetILProcessor();
+        foreach (var i in processor.Body.Instructions.ToArray())
+        {
+            processor.Remove(i);
+        }
+        foreach (var ctorParameter in ctor.Parameters)
+        {
+            if (String.Compare(parameterName, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0)
+            {
+                processor.Emit(OpCodes.Ldarg_1);
+            }
+            else
+            {
+                var getter = GetPropertyGetter(type, ctorParameter.Name);
+                processor.Emit(OpCodes.Ldarg_0);
+                processor.Emit(OpCodes.Call, getter);
+            }
+        }
+        processor.Emit(OpCodes.Newobj, ctor);
+        processor.Emit(OpCodes.Ret);
+        withMethod.Body.OptimizeMacros();
+    }
+
+    public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod)
+    {
         var processor = withMethod.Body.GetILProcessor();
         foreach (var i in processor.Body.Instructions.ToArray())
         {
@@ -173,6 +206,18 @@ public class ModuleWeaver
     private static string ToPropertyName(string fieldName)
     {
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
+    }
+
+    private static bool IsExplicitName(string methodName, out string parameterName)
+    {
+        if (!(methodName.Length > 4 && methodName.StartsWith("With")))
+        {
+            parameterName = null;
+            return false;
+        }
+
+        parameterName = methodName.Substring(4);
+        return true;
     }
 
     private IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
