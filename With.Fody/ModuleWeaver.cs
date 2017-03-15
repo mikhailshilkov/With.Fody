@@ -254,12 +254,9 @@ public class ModuleWeaver
     private MethodReference GetPropertyGetter(TypeDefinition type, string name)
     {
         // get the getter for the property anywhere in the hierachy with the given name
-        var property = GetAllProperties(type)
-            .FirstOrDefault(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0);
-        if (property == null)
-        {
-            return null;
-        }
-        return ModuleDefinition.ImportReference(property.GetMethod);
+        var getter = GetAllProperties(type)
+             .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
+             .GetMethod;
+        return ModuleDefinition.ImportReference(getter);
     }
 }
