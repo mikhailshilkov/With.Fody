@@ -85,7 +85,9 @@ public class ModuleWeaver
                         {
                             var methodName = "With";
                             // append property name if another parameter with same type
-                            if(ctor.Parameters.Except(new[] { parameter }).Any(p => p.ParameterType.FullName == parameter.ParameterType.FullName))
+                            if(ctor.Parameters
+                                .Except(new[] { parameter })
+                                .Any(p => p.ParameterType.FullName == parameter.ParameterType.FullName))
                             {
                                 methodName += propertyName;
                             }
@@ -156,7 +158,10 @@ public class ModuleWeaver
         {
             var withParameter = withMethod.Parameters
                 .Select((par, index) => new { Parameter = par, Index = index })
-                .FirstOrDefault(item => String.Compare(item.Parameter.Name, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
+                .FirstOrDefault(item => 
+                    item.Parameter.ParameterType.FullName == ctorParameter.ParameterType.FullName && 
+                    String.Compare(item.Parameter.Name, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
+
             if (withParameter != null)
             {
                 processor.Emit(OpCodes.Ldarg, withParameter.Index + 1);
