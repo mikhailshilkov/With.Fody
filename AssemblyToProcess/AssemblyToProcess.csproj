@@ -40,6 +40,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Inheritance.cs" />
+    <Compile Include="InheritanceFromAnotherAssembly.cs" />
     <Compile Include="MultipleConstructors2.cs" />
     <Compile Include="MultipleConstructorsOnlyOneIsPublic.cs" />
     <Compile Include="NoMatchingParameter.cs" />
@@ -53,7 +54,6 @@
     <Compile Include="PropertiesOfSameType.cs" />
     <Compile Include="PrimitiveValues.cs" />
     <Compile Include="InAssemblyUsage.cs" />
-    <Compile Include="InheritanceFromAnotherAssembly.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ReferencedAssembly\ReferencedAssembly.csproj">

@@ -1,8 +1,6 @@
 ﻿namespace AssemblyToProcess
 {
-    using ReferencedAssembly;
-
-    public class InheritanceFromAnotherAssembly : ReferencedBaseInheritance
+    public class InheritanceFromAnotherAssembly : ReferencedAssembly.ReferencedBaseInheritance
     {
         public InheritanceFromAnotherAssembly(int value1, string value2, long value3)
             : base(value1, value2)
