@@ -110,7 +110,7 @@ public class ModuleWeaver
             else
             {
                 var parameterName = (string)null;
-                if (withMethod.Parameters.Count == 1 && IsExplicitName(withMethod.Name, out parameterName))
+                if (withMethod.Parameters.Count == 1 && IsExplicitName(type, withMethod.Name, out parameterName))
                 {
                     AddWith(type, ctor, withMethod, parameterName);
                 }
@@ -213,7 +213,7 @@ public class ModuleWeaver
         return Char.ToUpperInvariant(fieldName[0]) + fieldName.Substring(1);
     }
 
-    private static bool IsExplicitName(string methodName, out string parameterName)
+    private bool IsExplicitName(TypeDefinition type, string methodName, out string parameterName)
     {
         if (!(methodName.Length > 4 && methodName.StartsWith("With")))
         {
@@ -222,7 +222,9 @@ public class ModuleWeaver
         }
 
         parameterName = methodName.Substring(4);
-        return true;
+        var name = parameterName; // required for lambda
+        return GetAllProperties(type)
+            .Any(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0);
     }
 
     private IEnumerable<PropertyDefinition> GetAllProperties(TypeDefinition type)
