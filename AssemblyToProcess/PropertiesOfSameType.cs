@@ -23,5 +23,9 @@ namespace AssemblyToProcess
         public PropertiesOfSameType WithValue2(int? value) => this;
 
         public PropertiesOfSameType WithValue3(int? value) => this;
+
+        public PropertiesOfSameType WithValue1Value2(int? value1, int? value2) => this;
+
+        public PropertiesOfSameType WithSecondAndThird(int? value2, int? value3) => this;
     }
 }

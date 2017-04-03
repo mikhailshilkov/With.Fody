@@ -160,6 +160,21 @@ public class WeaverTests
         Assert.AreEqual(instance.Value1, result3.Value1);
         Assert.AreEqual(instance.Value2, result3.Value2);
         Assert.AreEqual(31231, result3.Value3);
+
+        var result4 = instance.With(123, "World");
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual("World", result2.Value2);
+        Assert.AreEqual(31231, result3.Value3);
+
+        var result5 = instance.With(123, (long)31231);
+        Assert.AreEqual(123, result1.Value1);
+        Assert.AreEqual(instance.Value2, result3.Value2);
+        Assert.AreEqual(31231, result3.Value3);
+
+        var result6 = instance.WithSecondAndThird("World", (long)31231);
+        Assert.AreEqual(instance.Value1, result2.Value1);
+        Assert.AreEqual("World", result2.Value2);
+        Assert.AreEqual(31231, result3.Value3);
     }
 
     [Test]
@@ -181,6 +196,16 @@ public class WeaverTests
         var result3 = instance.WithValue3(333);
         Assert.AreEqual(instance.Value1, result3.Value1);
         Assert.AreEqual(instance.Value2, result3.Value2);
+        Assert.AreEqual(333, result3.Value3);
+
+        var result4 = instance.WithValue1Value2(111, 222);
+        Assert.AreEqual(111, result1.Value1);
+        Assert.AreEqual(222, result2.Value2);
+        Assert.AreEqual(instance.Value3, result1.Value3);
+
+        var result5 = instance.WithSecondAndThird(222, 333);
+        Assert.AreEqual(instance.Value1, result3.Value1);
+        Assert.AreEqual(222, result2.Value2);
         Assert.AreEqual(333, result3.Value3);
     }
 
