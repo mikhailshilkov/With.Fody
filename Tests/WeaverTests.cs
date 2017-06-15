@@ -31,16 +31,17 @@ public class WeaverTests
         var assemblyResolver = new DefaultAssemblyResolver();
         assemblyResolver.AddSearchDirectory(assemblyProcessBinPath);
 
-        var moduleDefinition = ModuleDefinition.ReadModule(newAssemblyPath);
-
-        var weavingTask = new ModuleWeaver
+        using (var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath))
         {
-            ModuleDefinition = moduleDefinition,
-            AssemblyResolver = assemblyResolver,
-        };
-
-        weavingTask.Execute();
-        moduleDefinition.Write(newAssemblyPath);
+            var weavingTask = new ModuleWeaver
+             {
+                ModuleDefinition = moduleDefinition,
+                AssemblyResolver = assemblyResolver
+            };
+            
+            weavingTask.Execute();
+            moduleDefinition.Write(newAssemblyPath);
+        }
 
         assembly = Assembly.LoadFile(newAssemblyPath);
 
