@@ -1,18 +1,29 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "With.Fody", "With.Fody\With.Fody.csproj", "{C3578A7B-09A6-4444-9383-0DEAFA4958BD}"
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28917.182
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "With.Fody", "With.Fody\With.Fody.csproj", "{C3578A7B-09A6-4444-9383-0DEAFA4958BD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{5A86453B-96FB-4B6E-A283-225BB9F753D3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tests", "Tests\Tests.csproj", "{5A86453B-96FB-4B6E-A283-225BB9F753D3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nuget", "NuGet\Nuget.csproj", "{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{E97E649F-B703-47E3-B18A-0871D3498742}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReferencedAssembly", "ReferencedAssembly\ReferencedAssembly.csproj", "{F80A2842-7FA8-4406-9439-A0F067D1FC4D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{C4B9FD25-265C-46A6-A80F-863924283E3C}"
+	ProjectSection(SolutionItems) = preProject
+		.gitattributes = .gitattributes
+		.gitignore = .gitignore
+		Directory.Build.props = Directory.Build.props
+		license.txt = license.txt
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "With", "With\With.csproj", "{443990DA-196E-4846-9D53-CD3B8FFA7D5D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{C3578A7B-09A6-4444-9383-0DEAFA4958BD} = {C3578A7B-09A6-4444-9383-0DEAFA4958BD}
 	EndProjectSection
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssemblyToProcess", "AssemblyToProcess\AssemblyToProcess.csproj", "{E97E649F-B703-47E3-B18A-0871D3498742}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReferencedAssembly", "ReferencedAssembly\ReferencedAssembly.csproj", "{F80A2842-7FA8-4406-9439-A0F067D1FC4D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -34,12 +45,6 @@ Global
 		{5A86453B-96FB-4B6E-A283-225BB9F753D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A86453B-96FB-4B6E-A283-225BB9F753D3}.Release|Any CPU.Build.0 = Release|Any CPU
 		{5A86453B-96FB-4B6E-A283-225BB9F753D3}.Release|x86.ActiveCfg = Release|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Release|Any CPU.Build.0 = Release|Any CPU
-		{63786CE5-D899-43DF-AD4E-C2CA3BAC3FC2}.Release|x86.ActiveCfg = Release|Any CPU
 		{E97E649F-B703-47E3-B18A-0871D3498742}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E97E649F-B703-47E3-B18A-0871D3498742}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E97E649F-B703-47E3-B18A-0871D3498742}.Debug|x86.ActiveCfg = Debug|Any CPU
@@ -54,8 +59,19 @@ Global
 		{F80A2842-7FA8-4406-9439-A0F067D1FC4D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F80A2842-7FA8-4406-9439-A0F067D1FC4D}.Release|x86.ActiveCfg = Release|Any CPU
 		{F80A2842-7FA8-4406-9439-A0F067D1FC4D}.Release|x86.Build.0 = Release|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Debug|x86.Build.0 = Debug|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Release|x86.ActiveCfg = Release|Any CPU
+		{443990DA-196E-4846-9D53-CD3B8FFA7D5D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A3031609-51C5-44E0-8291-8B3A730B0579}
 	EndGlobalSection
 EndGlobal
