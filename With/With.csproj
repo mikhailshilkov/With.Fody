@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0</TargetFrameworks>
+    <Authors>Mikhail Shilkov, Antao Almada</Authors>
+    <PackageOutputPath>$(SolutionDir)nugets</PackageOutputPath>
+    <PackageIconUrl>https://raw.github.com/mikhailshilkov/With.Fody/master/Icons/package_icon.png</PackageIconUrl>
+    <PackageProjectUrl>https://github.com/mikhailshilkov/With.Fody</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Fody" Version="5.0.6" PrivateAssets="None" />
+    <PackageReference Include="FodyPackaging" Version="5.0.6" PrivateAssets="All" />
+  </ItemGroup>
+</Project>

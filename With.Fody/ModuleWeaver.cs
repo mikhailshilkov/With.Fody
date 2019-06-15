@@ -1,38 +1,25 @@
-﻿using System;
-using System.Linq;
+﻿using Fody;
 using Mono.Cecil;
-using Mono.Cecil.Rocks;
 using Mono.Cecil.Cil;
+using System;
 using System.Collections.Generic;
+using System.Linq;
 
-public class ModuleWeaver
+public class ModuleWeaver : BaseModuleWeaver
 {
-    // Will log an informational message to MSBuild
-    public Action<string> LogInfo { get; set; } 
+    public override IEnumerable<string> GetAssembliesForScanning() => Enumerable.Empty<string>();
 
-    // An instance of Mono.Cecil.IAssemblyResolver for resolving assembly references. 
-    public IAssemblyResolver AssemblyResolver { get; set; }
-
-    // An instance of Mono.Cecil.ModuleDefinition for processing
-    public ModuleDefinition ModuleDefinition { get; set; }
-
-    // Init logging delegates to make testing easier
-    public ModuleWeaver()
+    public override void Execute()
     {
-        LogInfo = m => { };
-    }
-
-    public void Execute()
-    {
-        foreach (var type in ModuleDefinition.Types
+        foreach (var type in ModuleDefinition.GetTypes()
             .Where(type => 
                 type.Name != "<Module>" && 
-                type.GetMethods().Any(m => m.IsPublic && m.Name.StartsWith("With"))))
+                type.Methods.Any(m => m.IsPublic && m.Name.StartsWith("With"))))
         {
             try
             {
                 var ctor = GetValidConstructor(type);
-                if (ctor != null)
+                if (ctor is object)
                 {
                     AddWith(type, ctor);
                     RemoveGenericWith(type);
@@ -54,16 +41,25 @@ public class ModuleWeaver
 
     private MethodDefinition GetValidConstructor(TypeDefinition type)
     {
-        return type.GetConstructors()
-            .Where(ctor => ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => GetAllProperties(type).Any(pro => IsPair(pro, par))))
+        return type.Methods
+            .Where(ctor => ctor.IsConstructor && ctor.Parameters.Count >= 2 && ctor.Parameters.All(par => GetAllProperties(type).Any(pro => IsPair(pro, par))))
             .Aggregate((MethodDefinition)null, (max, next) => next.Parameters.Count > (max?.Parameters.Count ?? -1) ? next : max);
     }
 
     private void RemoveGenericWith(TypeDefinition type)
     {
-        foreach (var method in type.GetMethods().Where(m => m.IsPublic && m.Name == "With" && m.HasGenericParameters).ToArray())
+        if (type.HasMethods)
         {
-            type.Methods.Remove(method);
+            var count = type.Methods.Count;
+            for (var index = 0; index < count; index++)
+            {
+                var method = type.Methods[index];
+                if (method.IsPublic && method.HasGenericParameters && method.Name == "With")
+                {
+                    type.Methods.RemoveAt(index);
+                    break;
+                }
+            }
         }
     }
 
@@ -92,8 +88,18 @@ public class ModuleWeaver
                                 methodName += propertyName;
                             }
 
-                            var method = new MethodDefinition(methodName, MethodAttributes.Public, type);
-                            method.Parameters.Add(new ParameterDefinition(parameter.Name, ParameterAttributes.None, parameter.ParameterType));
+                            var method = new MethodDefinition(methodName, MethodAttributes.Public, type)
+                            {
+                                AggressiveInlining = true,
+                                CustomAttributes =
+                                {
+                                    GeneratedCodeAttribute(),
+                                },
+                                Parameters =
+                                {
+                                    new ParameterDefinition(parameter.Name, ParameterAttributes.None, parameter.ParameterType),
+                                },
+                            };
                             type.Methods.Add(method);
                             AddWith(type, ctor, method);
 
@@ -125,10 +131,7 @@ public class ModuleWeaver
     public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod, string parameterName)
     { 
         var processor = withMethod.Body.GetILProcessor();
-        foreach (var i in processor.Body.Instructions.ToArray())
-        {
-            processor.Remove(i);
-        }
+        processor.Body.Instructions.Clear();
         foreach (var ctorParameter in ctor.Parameters)
         {
             if (String.Compare(parameterName, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0)
@@ -144,16 +147,12 @@ public class ModuleWeaver
         }
         processor.Emit(OpCodes.Newobj, ctor);
         processor.Emit(OpCodes.Ret);
-        withMethod.Body.OptimizeMacros();
     }
 
     public void AddWith(TypeDefinition type, MethodDefinition ctor, MethodDefinition withMethod)
     {
         var processor = withMethod.Body.GetILProcessor();
-        foreach (var i in processor.Body.Instructions.ToArray())
-        {
-            processor.Remove(i);
-        }
+        processor.Body.Instructions.Clear();
         foreach (var ctorParameter in ctor.Parameters)
         {
             var withParameter = withMethod.Parameters
@@ -175,34 +174,28 @@ public class ModuleWeaver
         }
         processor.Emit(OpCodes.Newobj, ctor);
         processor.Emit(OpCodes.Ret);
-        withMethod.Body.OptimizeMacros();
     }
 
     private void ReplaceCalls(TypeDefinition withType, MethodDefinition newMethod, TypeReference argumentType)
     {
-        foreach (var type in ModuleDefinition.Types)
+        foreach (var call in ModuleDefinition.GetTypes()
+            .SelectMany(type => type.Methods.Where(x => x.Body != null))
+            .SelectMany(method => method.Body.Instructions.Where(i => i.OpCode == OpCodes.Callvirt)))
         {
-            foreach (var method in type.Methods.Where(x => x.Body != null))
+            var originalMethodReference = (MethodReference)call.Operand;
+            if (originalMethodReference.IsGenericInstance)
             {
-                var calls = method.Body.Instructions.Where(i => i.OpCode == OpCodes.Callvirt);
-                foreach (var call in calls)
-                {
-                    var originalMethodReference = (MethodReference)call.Operand;
-                    if (originalMethodReference.IsGenericInstance)
-                    {
-                        var genericMethodReference = originalMethodReference as GenericInstanceMethod;
-                        var originalMethodDefinition = originalMethodReference.Resolve();
-                        var declaringTypeReference = originalMethodReference.DeclaringType;
-                        var declaringTypeDefinition = declaringTypeReference.Resolve();
+                var genericMethodReference = originalMethodReference as GenericInstanceMethod;
+                var originalMethodDefinition = originalMethodReference.Resolve();
+                var declaringTypeReference = originalMethodReference.DeclaringType;
+                var declaringTypeDefinition = declaringTypeReference.Resolve();
 
-                        if (declaringTypeDefinition.FullName == withType.FullName
-                            && originalMethodDefinition.Name == newMethod.Name
-                            && genericMethodReference.GenericArguments[0] == argumentType)
-                        {
-                            call.Operand = ModuleDefinition.ImportReference(newMethod);
-                            LogInfo($"Found a call");
-                        }
-                    }
+                if (declaringTypeDefinition.FullName == withType.FullName
+                    && originalMethodDefinition.Name == newMethod.Name
+                    && genericMethodReference.GenericArguments[0] == argumentType)
+                {
+                    call.Operand = ModuleDefinition.ImportReference(newMethod);
+                    LogInfo($"Found a call");
                 }
             }
         }
@@ -232,7 +225,7 @@ public class ModuleWeaver
         // get recursively through the hierachy all the properties with a public getter
         return type.Properties
             .Where(pro => pro.GetMethod.IsPublic)
-            .Concat(type.BaseType == null ?
+            .Concat(type.BaseType is null ?
                 Enumerable.Empty<PropertyDefinition>() :
                 GetAllProperties(type.BaseType));
     }
@@ -240,10 +233,9 @@ public class ModuleWeaver
     private IEnumerable<PropertyDefinition> GetAllProperties(TypeReference type)
     {
         // import type if it's in a referenced assembly
-        var assemblyName = type.Scope as AssemblyNameReference;
-        if (assemblyName != null)
+        if (type.Scope is AssemblyNameReference assemblyName)
         {
-            var assembly = AssemblyResolver.Resolve(assemblyName);
+            var assembly = ResolveAssembly(assemblyName.Name);
             type = assembly.MainModule.GetType(type.FullName);
             ModuleDefinition.ImportReference(type);
         }
@@ -258,5 +250,20 @@ public class ModuleWeaver
             .First(pro => String.Compare(pro.Name, name, StringComparison.InvariantCultureIgnoreCase) == 0)
             .GetMethod;
         return ModuleDefinition.ImportReference(getter);
+    }
+
+    private CustomAttribute GeneratedCodeAttribute()
+    {
+        var assembly = GetType().Assembly;
+        var assemblyName = assembly.GetName().Name;
+        var assemblyVersion = ((System.Reflection.AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(assembly, typeof(System.Reflection.AssemblyFileVersionAttribute), false)).Version;
+        return new CustomAttribute(
+            ModuleDefinition.ImportReference(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).GetConstructor(new[] { typeof(string), typeof(string) })))
+            {
+                ConstructorArguments = {
+                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyName),
+                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyVersion),
+                }
+            };
     }
 }

@@ -1,71 +1,25 @@
-﻿using System;
+﻿using NUnit.Framework;
+using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Mono.Cecil;
-using NUnit.Framework;
 
 [TestFixture]
 public class WeaverTests
 {
-#if (DEBUG)
-    const string Configuration = "Debug";
-#else
-    const string Configuration = "Release";
-#endif
-
-    Assembly assembly;
-    string newAssemblyPath;
-    string assemblyPath;
-
-    [TestFixtureSetUp]
-    public void Setup()
+    [TestCase(typeof(AssemblyToProcess.NoConstructor))]
+    [TestCase(typeof(AssemblyToProcess.ConstructorWithSingleArgument))]
+    [TestCase(typeof(AssemblyToProcess.NoMatchingProperty))]
+    [TestCase(typeof(AssemblyToProcess.NoWithStub))]
+    public void DoesNotSatisfyAllRules_NoWithIsInjected(Type type)
     {
-        var localPath = new Uri(Path.GetDirectoryName(Assembly.GetExecutingAssembly().CodeBase)).LocalPath;
-        var assemblyProcessBinPath = Path.GetFullPath(Path.Combine(localPath, @"..\..\..\AssemblyToProcess\bin\" + Configuration));
-        assemblyPath = Path.Combine(assemblyProcessBinPath, "AssemblyToProcess.dll");
-
-        newAssemblyPath = assemblyPath.Replace(".dll", "2.dll");
-        File.Copy(assemblyPath, newAssemblyPath, true);
-
-        var assemblyResolver = new DefaultAssemblyResolver();
-        assemblyResolver.AddSearchDirectory(assemblyProcessBinPath);
-
-        using (var moduleDefinition = ModuleDefinition.ReadModule(assemblyPath))
-        {
-            var weavingTask = new ModuleWeaver
-             {
-                ModuleDefinition = moduleDefinition,
-                AssemblyResolver = assemblyResolver
-            };
-            
-            weavingTask.Execute();
-            moduleDefinition.Write(newAssemblyPath);
-        }
-
-        assembly = Assembly.LoadFile(newAssemblyPath);
-
-        AppDomain.CurrentDomain.AssemblyResolve += (sender, e) =>
-        {
-            return Assembly.LoadFrom(Path.Combine(assemblyProcessBinPath, @"ReferencedAssembly.dll"));
-        };
-    }
-
-    [TestCase("NoConstructor")]
-    [TestCase("ConstructorWithSingleArgument")]
-    [TestCase("NoMatchingProperty")]
-    [TestCase("NoWithStub")]
-    public void DoesNotSatisfyAllRules_NoWithIsInjected(string typeName)
-    {
-        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         Assert.False(type.GetMethods().Any(m => m.Name.StartsWith("With") && !(m.IsGenericMethod && m.GetParameters().Length == 1)));
     }
 
-    [TestCase("MultipleConstructors")]
-    [TestCase("MultipleConstructors2")]
-    public void MultipleConstructors_WithIsInjected(string typeName)
+    [TestCase(typeof(AssemblyToProcess.MultipleConstructors))]
+    [TestCase(typeof(AssemblyToProcess.MultipleConstructors2))]
+    public void MultipleConstructors_WithIsInjected(Type type)
     {
-        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
 
         var result1 = instance.With(123);
@@ -84,11 +38,10 @@ public class WeaverTests
         Assert.AreEqual(31231, result3.Value3);
     }
 
-    [TestCase("Inheritance")]
-    [TestCase("InheritanceFromAnotherAssembly")]
-    public void Inheritance_WithIsInjected(string typeName)
+    [TestCase(typeof(AssemblyToProcess.Inheritance))]
+    [TestCase(typeof(AssemblyToProcess.InheritanceFromAnotherAssembly))]
+    public void Inheritance_WithIsInjected(Type type)
     {
-        var type = assembly.GetType($"AssemblyToProcess.{typeName}");
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", 234234L });
 
         var result1 = instance.With(123);
@@ -110,7 +63,7 @@ public class WeaverTests
     [Test]
     public void MultipleConstructorsOnlyOneIsPublic_WithIsInjected()
     {
-        var type = assembly.GetType("AssemblyToProcess.MultipleConstructorsOnlyOneIsPublic");
+        var type = typeof(AssemblyToProcess.MultipleConstructorsOnlyOneIsPublic);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
 
         var result1 = instance.With(123);
@@ -125,7 +78,7 @@ public class WeaverTests
     [Test]
     public void NoMatchingParameter_WithIsInjectedForOtherParameters()
     {
-        var type = assembly.GetType("AssemblyToProcess.NoMatchingParameter");
+        var type = typeof(AssemblyToProcess.NoMatchingParameter);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, 2 });
 
         var result1 = instance.WithValue1(111);
@@ -144,7 +97,7 @@ public class WeaverTests
     [Test]
     public void PrimitiveValues_ShortWithIsInjected()
     {
-        var type = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        var type = typeof(AssemblyToProcess.PrimitiveValues);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
 
         var result1 = instance.With(123);
@@ -181,7 +134,7 @@ public class WeaverTests
     [Test]
     public void PropertiesOfSameType_LongNamedWithIsInjected()
     {
-        var type = assembly.GetType("AssemblyToProcess.PropertiesOfSameType");
+        var type = typeof(AssemblyToProcess.PropertiesOfSameType);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, 2, 3 });
 
         var result1 = instance.WithValue1(111);
@@ -213,7 +166,7 @@ public class WeaverTests
     [Test]
     public void UnusualPropertyCasing_WithIsInjectedAnyway()
     {
-        var type = assembly.GetType("AssemblyToProcess.PropertyCasing");
+        var type = typeof(AssemblyToProcess.PropertyCasing);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
 
         var result1 = instance.With(123);
@@ -228,13 +181,13 @@ public class WeaverTests
     [Test]
     public void InAssemblyUsage_Works()
     {
-        var type = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        var type = typeof(AssemblyToProcess.PrimitiveValues);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello", (long)234234 });
-        var runner = (dynamic)Activator.CreateInstance(assembly.GetType("AssemblyToProcess.InAssemblyUsage"));
+        var runner = (dynamic)Activator.CreateInstance(typeof(AssemblyToProcess.InAssemblyUsage));
         var result = runner.ChangeIntTo3(instance);
         Assert.AreEqual(3, result.Value1);
 
-        type = assembly.GetType("AssemblyToProcess.PropertiesOfSameType");
+        type = typeof(AssemblyToProcess.PropertiesOfSameType);
         instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, 2, 3 });
         result = runner.ChangeValue1To33(instance);
         Assert.AreEqual(33, result.Value1);
@@ -243,7 +196,7 @@ public class WeaverTests
     [Test]
     public void UniquePropertyTypeButExplicitMethodName_WithIsEmittedWithLongName()
     {
-        var type = assembly.GetType("AssemblyToProcess.ExplicitlyAskedForFullName");
+        var type = typeof(AssemblyToProcess.ExplicitlyAskedForFullName);
         var instance = (dynamic)Activator.CreateInstance(type, new object[] { 1, "Hello" });
 
         var result1 = instance.WithValue1(123);
@@ -258,15 +211,7 @@ public class WeaverTests
     [Test]
     public void OriginalWithMethodIsRemoved()
     {
-        var type1 = assembly.GetType("AssemblyToProcess.PrimitiveValues");
+        var type1 = typeof(AssemblyToProcess.PrimitiveValues);
         Assert.False(type1.GetMethods().Any(m => m.Name == "With" && m.IsGenericMethod));
     }
-
-#if(DEBUG)
-    [Test]
-    public void PeVerify()
-    {
-        Verifier.Verify(assemblyPath,newAssemblyPath);
-    }
-#endif
 }
