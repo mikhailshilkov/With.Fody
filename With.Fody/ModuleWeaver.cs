@@ -4,6 +4,7 @@ using Mono.Cecil.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 
 public class ModuleWeaver : BaseModuleWeaver
 {
@@ -115,6 +116,9 @@ public class ModuleWeaver : BaseModuleWeaver
             }
             else
             {
+                withMethod.AggressiveInlining = true;
+                withMethod.CustomAttributes.Add(GeneratedCodeAttribute());
+
                 var parameterName = (string)null;
                 if (withMethod.Parameters.Count == 1 && IsExplicitName(type, withMethod.Name, out parameterName))
                 {
@@ -252,17 +256,19 @@ public class ModuleWeaver : BaseModuleWeaver
         return ModuleDefinition.ImportReference(getter);
     }
 
+    private static readonly Lazy<string> assemblyName = 
+        new Lazy<string>(() => typeof(ModuleWeaver).Assembly.GetName().Name);
+    private static readonly Lazy<string> assemblyVersion = 
+        new Lazy<string>(() => ((System.Reflection.AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(typeof(ModuleWeaver).Assembly, typeof(System.Reflection.AssemblyFileVersionAttribute), false))?.Version ?? string.Empty);
+
     private CustomAttribute GeneratedCodeAttribute()
     {
-        var assembly = GetType().Assembly;
-        var assemblyName = assembly.GetName().Name;
-        var assemblyVersion = ((System.Reflection.AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(assembly, typeof(System.Reflection.AssemblyFileVersionAttribute), false)).Version;
         return new CustomAttribute(
             ModuleDefinition.ImportReference(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).GetConstructor(new[] { typeof(string), typeof(string) })))
             {
                 ConstructorArguments = {
-                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyName),
-                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyVersion),
+                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyName.Value),
+                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyVersion.Value),
                 }
             };
     }
