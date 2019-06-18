@@ -165,7 +165,7 @@ public class ModuleWeaver : BaseModuleWeaver
                     item.Parameter.ParameterType.FullName == ctorParameter.ParameterType.FullName && 
                     String.Compare(item.Parameter.Name, ctorParameter.Name, StringComparison.InvariantCultureIgnoreCase) == 0);
 
-            if (withParameter != null)
+            if (withParameter is object)
             {
                 processor.Emit(OpCodes.Ldarg, withParameter.Index + 1);
             }
@@ -183,8 +183,8 @@ public class ModuleWeaver : BaseModuleWeaver
     private void ReplaceCalls(TypeDefinition withType, MethodDefinition newMethod, TypeReference argumentType)
     {
         foreach (var call in ModuleDefinition.GetTypes()
-            .SelectMany(type => type.Methods.Where(x => x.Body != null))
-            .SelectMany(method => method.Body.Instructions.Where(i => i.OpCode == OpCodes.Callvirt)))
+            .SelectMany(type => type.Methods.Where(method => method.HasBody))
+            .SelectMany(method => method.Body.Instructions.Where(instruction => instruction.OpCode == OpCodes.Callvirt)))
         {
             var originalMethodReference = (MethodReference)call.Operand;
             if (originalMethodReference.IsGenericInstance)
