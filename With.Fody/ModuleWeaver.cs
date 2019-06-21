@@ -8,7 +8,10 @@ using System.Threading;
 
 public class ModuleWeaver : BaseModuleWeaver
 {
-    public override IEnumerable<string> GetAssembliesForScanning() => Enumerable.Empty<string>();
+    public override IEnumerable<string> GetAssembliesForScanning() 
+    {
+        yield return "netstandard";
+    }
 
     public override void Execute()
     {
@@ -256,20 +259,25 @@ public class ModuleWeaver : BaseModuleWeaver
         return ModuleDefinition.ImportReference(getter);
     }
 
-    private static readonly Lazy<string> assemblyName = 
-        new Lazy<string>(() => typeof(ModuleWeaver).Assembly.GetName().Name);
-    private static readonly Lazy<string> assemblyVersion = 
-        new Lazy<string>(() => ((System.Reflection.AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(typeof(ModuleWeaver).Assembly, typeof(System.Reflection.AssemblyFileVersionAttribute), false))?.Version ?? string.Empty);
+    private static CustomAttribute generatedCodeAttribute;
 
     private CustomAttribute GeneratedCodeAttribute()
-    {
-        return new CustomAttribute(
-            ModuleDefinition.ImportReference(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).GetConstructor(new[] { typeof(string), typeof(string) })))
-            {
-                ConstructorArguments = {
-                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyName.Value),
-                    new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyVersion.Value),
-                }
-            };
-    }
+        => LazyInitializer.EnsureInitialized(ref generatedCodeAttribute, () =>
+        {
+            var type = FindType(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute).FullName);
+            var constructor = type.Methods.First(method => 
+                method.IsConstructor && 
+                method.Parameters.Count == 2 &&
+                method.Parameters[0].ParameterType.FullName == "System.String" &&
+                method.Parameters[1].ParameterType.FullName == "System.String");
+            var assemblyName = GetType().Assembly.GetName().Name;
+            var assemblyVersion = ((System.Reflection.AssemblyFileVersionAttribute)Attribute.GetCustomAttribute(GetType().Assembly, typeof(System.Reflection.AssemblyFileVersionAttribute), false))?.Version ?? string.Empty;
+            return new CustomAttribute(ModuleDefinition.ImportReference(constructor))
+                {
+                    ConstructorArguments = {
+                        new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyName),
+                        new CustomAttributeArgument(ModuleDefinition.TypeSystem.String, assemblyVersion),
+                    }
+                };
+        });
 }
